@@ -365,9 +365,8 @@ var formidable = require('formidable'); // Multiple file upload library
 var cheerio = require('cheerio');
 
 // use the cors cross origin REST model
+// allow requests from all origins. TODO make it dependent on the local network. this is important for security
 webServer.use(cors());
-// allow requests from all origins with '*'. TODO make it dependent on the local network. this is important for security
-webServer.options('*', cors());
 
 // Image resizing library, not available on mobile
 let Jimp = null;
@@ -1632,7 +1631,7 @@ function objectWebServer() {
     // check all server requests for being inside the netmask parameters.
     // the netmask is set to local networks only.
 
-    webServer.use('*', function (req, res, next) {
+    webServer.use(function (req, res, next) {
 
         var remoteIP = parseIpSpace(req.ip);
         var localIP = parseIpSpace(services.ip);
