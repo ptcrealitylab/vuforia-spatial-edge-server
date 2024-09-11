@@ -40,10 +40,12 @@
     "jsdoc": "^4.0.3",
     "minami": "^1.2.3",
     "mock-fs": "^5.2.0",
-    "puppeteer": "^22.15.0"
+    "nyc": "^17.0.0",
+    "puppeteer": "^22.15.0",
+    "puppeteer-to-istanbul": "^1.4.0"
   },
   "scripts": {
-    "test": "npm run lint && jest --forceExit --runInBand --coverage",
+    "test": "npm run lint && jest --forceExit --runInBand --coverage && nyc report --reporter=html --report-dir=coverage-ui",
     "test-older": "jest server-simple.test.js",
     "lint": "eslint .",
     "lint-quiet": "eslint . --quiet",
