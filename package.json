@@ -45,11 +45,12 @@
     "puppeteer-to-istanbul": "^1.4.0"
   },
   "scripts": {
-    "test": "npm run lint && jest --forceExit --runInBand --coverage && nyc report --reporter=html --report-dir=coverage-ui",
+    "test": "npm run lint && jest --forceExit --runInBand --coverage && npm run generate-coverage-ui",
     "test-older": "jest server-simple.test.js",
     "lint": "eslint .",
     "lint-quiet": "eslint . --quiet",
     "generate-docs": "jsdoc -c .jsdoc.conf -r .",
+    "generate-coverage-ui": "nyc report --reporter=html --report-dir=coverage-ui -x '**/thirdPartyCode/**'",
     "start": "node index.js"
   },
   "_moduleAliases": {
