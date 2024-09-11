@@ -56,6 +56,8 @@ libraries/objectLogs/*
 /config-private.js
 
 /coverage
+/coverage-ui
+/.nyc_output
 
 /scripts/cert.conf
 
