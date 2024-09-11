@@ -2216,7 +2216,7 @@ function objectWebServer() {
 
         // Proxies requests to spatial.ptc.io, for CORS video playback
         const proxyRequestHandler = require('./libraries/serverHelpers/proxyRequestHandler.js');
-        webServer.get('/proxy/*', proxyRequestHandler);
+        webServer.get('/proxy/*proxyPath', proxyRequestHandler);
 
         const {oauthRefreshRequestHandler, oauthAcquireRequestHandler} = require('./libraries/serverHelpers/oauthRequestHandlers.js');
         webServer.post('/oauthRefresh', oauthRefreshRequestHandler);

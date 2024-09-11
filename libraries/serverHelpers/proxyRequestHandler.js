@@ -1,7 +1,7 @@
 const https = require('https');
 
 const proxyRequestHandler = (req, res) => {
-    const input = req.params[0];
+    const input = req.params.proxyPath.join('/');
     if (!input.includes('://')) {
         const proxyURL = `https://spatial.ptc.io/${req.params[0]}`;
         const headers = req.headers;
