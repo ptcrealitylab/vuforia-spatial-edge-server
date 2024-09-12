@@ -1239,7 +1239,7 @@ async function exit() {
     }
     updateAggregator.stop();
     console.info('Server exited successfully');
-    if (process.env.NODE_ENV !== 'test') {
+    if (process.env.NODE_ENV !== 'test' && !globalVariables.isMobile) {
         process.exit(0);
     }
 }
