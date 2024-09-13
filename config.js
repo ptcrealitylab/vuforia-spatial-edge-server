@@ -10,6 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const yargs = require('yargs');
+const {isLightweightMobile, isStandaloneMobile} = require('./isMobile.js');
 
 const argv = yargs
     .option('spatialToolboxPath', {
@@ -55,6 +56,9 @@ module.exports.objectsPath = objectsPath;
 
 // this is the port for UDP broadcasting so that the objects find each other
 module.exports.beatPort = argv.udpPort || 52316;
+
+// Port of the API and configuration UI server
+module.exports.serverPort = (isLightweightMobile || isStandaloneMobile) ? 49369 : 8080;
 
 // Whether to enable the offline clone functionality
 module.exports.persistToCloud = false;

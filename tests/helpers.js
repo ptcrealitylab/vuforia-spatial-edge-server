@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const {allowSecureMode} = require('../config.js');
+const {allowSecureMode, serverPort} = require('../config.js');
 
 const fetch = require('node-fetch');
 
@@ -12,7 +12,7 @@ const fetchAgent = allowSecureMode ?
 exports.fetchAgent = fetchAgent;
 
 const localProto = allowSecureMode ? 'https' : 'http';
-const localServer = `${localProto}://localhost:8080`;
+const localServer = `${localProto}://localhost:${serverPort}`;
 const localRemoteOperator = `${localProto}://localhost:8081`;
 
 exports.localServer = localServer;
