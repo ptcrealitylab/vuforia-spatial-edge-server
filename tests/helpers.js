@@ -3,15 +3,18 @@ const path = require('path');
 const https = require('https');
 
 const {allowSecureMode, serverPort} = require('../config.js');
+const {isLightweightMobile, isStandaloneMobile} = require('../isMobile.js');
 
 const fetch = require('node-fetch');
+const useHTTPS = allowSecureMode &&
+        !(isLightweightMobile || isStandaloneMobile); // on mobile devices node.js doesn't fully support HTTPS
 
-const fetchAgent = allowSecureMode ?
+const fetchAgent = useHTTPS ?
     new https.Agent({rejectUnauthorized: false}) :
     null; // No special agent required for http
 exports.fetchAgent = fetchAgent;
 
-const localProto = allowSecureMode ? 'https' : 'http';
+const localProto = useHTTPS ? 'https' : 'http';
 const localServer = `${localProto}://localhost:${serverPort}`;
 const localRemoteOperator = `${localProto}://localhost:8081`;
 
