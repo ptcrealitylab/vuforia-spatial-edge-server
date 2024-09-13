@@ -746,10 +746,15 @@ async function loadObjects() {
     hardwareAPI.reset();
 
     sceneGraph.recomputeGraph();
+
+    executeInitialProcessBlockLinks();
 }
 
 
-var executeSetups = function () {
+/**
+ * Go through all objects and processBlockLinks once. Useful on initial load
+ */
+function executeInitialProcessBlockLinks() {
     for (let objectKey in objects) {
         for (let frameKey in objects[objectKey].frames) {
             var thisFrame = objects[objectKey].frames[frameKey];
@@ -768,8 +773,7 @@ var executeSetups = function () {
             }
         }
     }
-};
-executeSetups();
+}
 
 /**
  * Initialize worldObject to contents of spatialToolbox/_WORLD_local/.identity/object.json
