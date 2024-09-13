@@ -76,7 +76,7 @@ try {
 }
 
 const _logger = require('./logger');
-const {objectsPath, beatPort, allowSecureMode, persistToCloud} = require('./config');
+const {objectsPath, beatPort, serverPort, allowSecureMode, persistToCloud} = require('./config');
 const {providedServices} = require('./services');
 
 const os = require('os');
@@ -130,9 +130,9 @@ if (global.gc) {
 
  */
 
-const serverPort = (isLightweightMobile || isStandaloneMobile) ? 49369 : 8080;
 const serverUserInterfaceAppPort = 49368;
 const socketPort = serverPort;     // server and socket port are always identical
+exports.serverPort = serverPort;
 exports.beatPort = beatPort;
 const timeToLive = 3;                     // the amount of routers a UDP broadcast can jump. For a local network 2 is enough.
 const beatInterval = 5000;         // how often is the heartbeat sent
