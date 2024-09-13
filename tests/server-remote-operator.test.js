@@ -28,6 +28,25 @@ afterAll(async () => {
     await sleep(1000);
 });
 
+async function openSecondPageAndOrbit(browser) {
+    const page = await browser.newPage();
+
+    await page.goto(
+        localRemoteOperator,
+        {
+            timeout: 60 * 1000,
+        },
+    );
+
+    await page.waitForSelector('#gltf-added', {
+        timeout: 60 * 1000
+    });
+
+    await page.keyboard.press('KeyO');
+
+    return page;
+}
+
 test('server provides remote operator functionality', async () => {
     const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--ignore-certificate-errors'],
@@ -69,6 +88,8 @@ test('server provides remote operator functionality', async () => {
     });
 
     await sleep(2000);
+
+    const secondPagePromise = openSecondPageAndOrbit(browser);
 
     await page.goto(
         // `https://${localSettings.serverUrl}/stable/n/${localSettings.networkUUID}/s/${localSettings.networkSecret}/`,
@@ -129,6 +150,9 @@ test('server provides remote operator functionality', async () => {
     });
 
     await page.close();
+
+    const secondPage = await secondPagePromise;
+    await secondPage.close();
 
     await browser.close();
 
