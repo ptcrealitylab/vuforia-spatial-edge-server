@@ -32,7 +32,7 @@
      * frames are only visible when the envelope is open.
      *
      * @constructor
-     * @param {RealityInterface} realityInterface - reference to the RealityInterface API object
+     * @param {RealityInterface|SpatialInterface} realityInterface - reference to the RealityInterface API object
      * @param {Array.<string>} compatibleFrameTypes - array of types of frames that can be added to this envelope
      * @param {HTMLElement} rootElementWhenOpen - a containing div that will be rendered when open (fullscreen 2D)
      * @param {HTMLElement} rootElementWhenClosed - a containing div that will be rendered when closed (small 3D icon)
@@ -467,6 +467,10 @@
                 this.savePersistentData();
             }
         };
+        
+        Envelope.prototype.checkOpenCloseState = function() {
+            
+        }
     }
 
     // Internal helper functions, not actually private but don't need to be called from the frame you build

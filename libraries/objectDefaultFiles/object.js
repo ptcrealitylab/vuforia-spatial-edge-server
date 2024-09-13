@@ -834,6 +834,11 @@
                 this.patchHydrate = makeSendStub('patchHydrate');
                 this.patchSetShaderMode = makeSendStub('patchSetShaderMode');
 
+                this.sendMessageSidebarToViewport = makeSendStub('sendMessageSidebarToViewport');
+                this.sendMessageViewportToSidebar = makeSendStub('sendMessageViewportToSidebar');
+                this.onViewportToSidebarMessage = makeSendStub('onViewportToSidebarMessage');
+                this.onSidebarToViewportMessage = makeSendStub('onSidebarToViewportMessage');
+
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -1393,7 +1398,7 @@
             Object.values(spatialObject.COORDINATE_SYSTEMS).forEach(coordinateSystemName => {
                 if (subscriptions.includes(coordinateSystemName)) {
                     spatialObject.sendCoordinateSystems[coordinateSystemName] = true;
-                    console.log(`spatialObject.sendCoordinateSystems[${coordinateSystemName}] = true`);
+                    // console.log(`spatialObject.sendCoordinateSystems[${coordinateSystemName}] = true`);
                 }
             });
             // register the callback function
@@ -2098,6 +2103,51 @@
         };
 
         this.subscribeToToolDeletedEvents = this.subscribeToFrameDeletedEvents;
+
+        this.sendMessageSidebarToViewport = function(messageType, messagePayload) {
+            let sidebarToViewport = {};
+            sidebarToViewport[messageType] = messagePayload;
+
+            postDataToParent({
+                sidebarToViewport: sidebarToViewport
+            });
+        };
+
+        this.sendMessageViewportToSidebar =  function(messageType, messagePayload) {
+            let viewportToSidebar = {};
+            viewportToSidebar[messageType] = messagePayload;
+
+            postDataToParent({
+                viewportToSidebar: viewportToSidebar
+            });
+        };
+
+        let messageSubscriptionCounters = {
+            onViewportToSidebarMessage: 0,
+            onSidebarToViewportMessage: 0,
+        };
+
+        this.onViewportToSidebarMessage =  function(callback) {
+            messageSubscriptionCounters.onViewportToSidebarMessage++;
+            let callbackId = `onViewportToSidebarMessageCall_${messageSubscriptionCounters.onViewportToSidebarMessage}`;
+            spatialObject.messageCallBacks[callbackId] = function (msgContent) {
+                if (spatialObject.visibility !== 'visible') return;
+                if (typeof msgContent.viewportToSidebar !== 'undefined') {
+                    callback(msgContent.viewportToSidebar);
+                }
+            };
+        };
+
+        this.onSidebarToViewportMessage =  function(callback) {
+            messageSubscriptionCounters.onSidebarToViewportMessage++;
+            let callbackId = `onSidebarToViewportMessageCall_${messageSubscriptionCounters.onSidebarToViewportMessage}`;
+            spatialObject.messageCallBacks[callbackId] = function (msgContent) {
+                if (spatialObject.visibility !== 'visible') return;
+                if (typeof msgContent.sidebarToViewport !== 'undefined') {
+                    callback(msgContent.sidebarToViewport);
+                }
+            };
+        };
 
         /**
          * Broadcasts a standardized message when a video plays, that will automatically pause videos in all other frames
