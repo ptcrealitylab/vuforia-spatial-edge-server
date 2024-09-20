@@ -842,6 +842,11 @@
                 this.onViewportToSidebarMessage = makeSendStub('onViewportToSidebarMessage');
                 this.onSidebarToViewportMessage = makeSendStub('onSidebarToViewportMessage');
 
+                this.sendMessageFooterToViewport = makeSendStub('sendMessageFooterToViewport');
+                this.sendMessageViewportToFooter = makeSendStub('sendMessageViewportToFooter');
+                this.onViewportToFooterMessage = makeSendStub('onViewportToFooterMessage');
+                this.onFooterToViewportMessage = makeSendStub('onFooterToViewportMessage');
+
                 // deprecated methods
                 this.sendToBackground = makeSendStub('sendToBackground');
             }
@@ -2208,9 +2213,29 @@
             });
         };
 
+        this.sendMessageFooterToViewport = function(messageType, messagePayload) {
+            let footerToViewport = {};
+            footerToViewport[messageType] = messagePayload;
+
+            postDataToParent({
+                footerToViewport: footerToViewport
+            });
+        };
+
+        this.sendMessageViewportToFooter =  function(messageType, messagePayload) {
+            let viewportToFooter = {};
+            viewportToFooter[messageType] = messagePayload;
+
+            postDataToParent({
+                viewportToFooter: viewportToFooter
+            });
+        };
+
         let messageSubscriptionCounters = {
             onViewportToSidebarMessage: 0,
             onSidebarToViewportMessage: 0,
+            onViewportToFooterMessage: 0,
+            onFooterToViewportMessage: 0
         };
 
         this.onViewportToSidebarMessage =  function(callback) {
@@ -2233,6 +2258,61 @@
                     callback(msgContent.sidebarToViewport);
                 }
             };
+        };
+
+        this.onViewportToFooterMessage =  function(callback) {
+            messageSubscriptionCounters.onViewportToFooterMessage++;
+            let callbackId = `onViewportToFooterMessageCall_${messageSubscriptionCounters.onViewportToFooterMessage}`;
+            spatialObject.messageCallBacks[callbackId] = function (msgContent) {
+                if (spatialObject.visibility !== 'visible') return;
+                if (typeof msgContent.viewportToFooter !== 'undefined') {
+                    callback(msgContent.viewportToFooter);
+                }
+            };
+        };
+
+        this.onFooterToViewportMessage =  function(callback) {
+            messageSubscriptionCounters.onFooterToViewportMessage++;
+            let callbackId = `onFooterToViewportMessageCall_${messageSubscriptionCounters.onFooterToViewportMessage}`;
+            spatialObject.messageCallBacks[callbackId] = function (msgContent) {
+                if (spatialObject.visibility !== 'visible') return;
+                if (typeof msgContent.footerToViewport !== 'undefined') {
+                    callback(msgContent.footerToViewport);
+                }
+            };
+        };
+
+        // the userinterface will combine all of the limitations and use the strictest combination
+        this.addViewportMarginLimitation = function({left, top, right, bottom}) {
+            let margins = {};
+            if (typeof left === 'number') {
+                margins.left = left;
+            }
+            if (typeof top === 'number') {
+                margins.top = top;
+            }
+            if (typeof right === 'number') {
+                margins.right = right;
+            }
+            if (typeof bottom === 'number') {
+                margins.bottom = bottom;
+            }
+
+            postDataToParent({
+                addViewportMarginLimitation: {
+                    left,
+                    top,
+                    right,
+                    bottom
+                }
+            });
+        };
+
+        // the userinterface will combine all of the limitations and use the strictest combination
+        this.removeViewportMarginLimitation = function() {
+            postDataToParent({
+                removeViewportMarginLimitation: true
+            });
         };
 
         /**
@@ -2295,6 +2375,11 @@
         this.changeToolSize = this.changeFrameSize;
 
         let windowResizedCallbackCount = 0;
+        /**
+         * Gives the viewport width and height that this iframe is rendered within
+         * @param callback
+         * @deprecated - use onWindowOrViewportResized instead
+         */
         this.onWindowResized = function(callback) {
             windowResizedCallbackCount++;
             spatialObject.messageCallBacks[`onWindowResizedCall${windowResizedCallbackCount}`] = (msgContent) => {
@@ -2311,7 +2396,42 @@
         };
 
         /**
+         * @param {function} callback
+         */
+        this.onWindowOrViewportResized = function(callback) {
+            windowResizedCallbackCount++;
+            spatialObject.messageCallBacks[`onWindowOrViewportResizedCall${windowResizedCallbackCount}`] = (msgContent) => {
+                if (typeof msgContent.onWindowOrViewportResized === 'undefined') return;
+                callback({
+                    fullWindow: {
+                        width: msgContent.onWindowOrViewportResized.fullWindow.width,
+                        height: msgContent.onWindowOrViewportResized.fullWindow.height,
+                        top: msgContent.onWindowOrViewportResized.fullWindow.top,
+                        left: msgContent.onWindowOrViewportResized.fullWindow.left,
+                    },
+                    viewport: {
+                        width: msgContent.onWindowOrViewportResized.viewport.width,
+                        height: msgContent.onWindowOrViewportResized.viewport.height,
+                        top: msgContent.onWindowOrViewportResized.viewport.top,
+                        left: msgContent.onWindowOrViewportResized.viewport.left,
+                    },
+                    safeWindowBounds: {
+                        width: msgContent.onWindowOrViewportResized.viewport.width, // account for title bars, notch insets, etc
+                        height: msgContent.onWindowOrViewportResized.viewport.height,
+                        top: msgContent.onWindowOrViewportResized.viewport.top,
+                        left: msgContent.onWindowOrViewportResized.viewport.left,
+                    }
+                });
+            };
+
+            postDataToParent({
+                sendWindowResize: true
+            });
+        };
+
+        /**
          * Asynchronously query the screen width and height from the parent application, as the iframe itself can't access that
+         * This has been updated to return the viewport width and height that the iframe is rendered within, not the entire screen.
          * @param {function} callback
          */
         this.getScreenDimensions = function(callback) {
