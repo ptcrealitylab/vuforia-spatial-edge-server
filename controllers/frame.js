@@ -289,7 +289,7 @@ const deleteFrame = async function(objectId, frameId, body, callback) {
         return frame.nodes[nodeKey].publicData;
     });
     var videoPaths = publicDataOnAllNodes.filter(function (publicData) {
-        if (publicData.hasOwnProperty('data') && typeof publicData.data === 'string') {
+        if (publicData && publicData.hasOwnProperty('data') && typeof publicData.data === 'string') {
             if (publicData.data.indexOf('http') > -1 && publicData.data.indexOf('.mp4') > -1) {
                 return true;
             }
