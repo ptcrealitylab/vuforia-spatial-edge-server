@@ -382,7 +382,7 @@ if (!isLightweightMobile) {
 
 // This file hosts all kinds of utilities programmed for the server
 const utilities = require('./libraries/utilities');
-const {fileExists, mkdirIfNotExists, rmdirIfExists, unlinkIfExists} = utilities;
+const {fileExists, splatFileExists, mkdirIfNotExists, rmdirIfExists, unlinkIfExists} = utilities;
 const nodeUtilities = require('./libraries/nodeUtilities');
 const recorder = require('./libraries/recorder');
 
@@ -1220,7 +1220,7 @@ async function objectBeatSender(PORT, thisId, thisIp, oneTimeOnly = false, immed
         let xmlPath = path.join(targetDir, 'target.xml');
         let glbPath = path.join(targetDir, 'target.glb');
         let tdtPath = path.join(targetDir, 'target.3dt');
-        let splatPath = path.join(targetDir, 'target.splat');
+        let splatPath = path.join(targetDir, 'target_splats');
         var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath, splatPath];
         const tcs = await utilities.generateChecksums(objects, fileList);
         if (objects[thisId]) {
@@ -1693,12 +1693,18 @@ function objectWebServer() {
             'target.glb',
             'target.unitypackage',
             'target.3dt',
-            'target.splat',
         ];
+        let targetSplatFiles = 'target_splats';
 
         if (targetFiles.includes(filename) && urlArray[urlArray.length - 2] === 'target') {
             urlArray[urlArray.length - 2] = identityFolderName + '/target';
             switchToInteraceTool = false;
+        } else if (urlArray[urlArray.length - 2] === targetSplatFiles) { // for target_splats folder, eg: [ '_WORLD_SAGA', 'target', 'target_splats', 'target_1.splat' ]
+            let regex = /^target.*\.splat$/;
+            if (regex.test(filename)) {
+                urlArray[urlArray.length - 3] = identityFolderName + '/target';
+                switchToInteraceTool = false;
+            }
         }
 
         if ((filename === 'memory.jpg' || filename === 'memoryThumbnail.jpg')
@@ -2939,7 +2945,7 @@ function objectWebServer() {
                                     let xmlPath = path.join(folderD, identityFolderName, '/target/target.xml');
                                     let glbPath = path.join(folderD, identityFolderName, '/target/target.glb');
                                     let tdtPath = path.join(folderD, identityFolderName, '/target/target.3dt');
-                                    let splatPath = path.join(folderD, identityFolderName, '/target/target.splat');
+                                    let splatPath = path.join(folderD, identityFolderName, '/target/target_splats');
 
                                     var fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath, splatPath];
 
@@ -2950,7 +2956,7 @@ function objectWebServer() {
                                         var xml = await fileExists(xmlPath);
                                         var glb = await fileExists(glbPath);
                                         var tdt = await fileExists(tdtPath);
-                                        var splat = await fileExists(splatPath);
+                                        var splat = await splatFileExists(splatPath);
 
                                         var sendObject = {
                                             id: thisObjectId,

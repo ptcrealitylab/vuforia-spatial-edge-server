@@ -454,6 +454,18 @@ router.get('/:objectName/checkTargetFiles/', (req, res) => {
     });
 });
 
+router.get('/:objectName/listSplatFiles/', (req, res) => {
+    if (!utilities.isValidId(req.params.objectName)) {
+        res.status(400).send('Invalid object name. Must be alphanumeric.');
+        return;
+    }
+    objectController.callListSplatFiles(req.params.objectName, 'target/target_splats').then(splatFiles => {
+        res.json(splatFiles);
+    }).catch(e => {
+        res.status(404).json({ error: e, exists: false });
+    })
+})
+
 router.post('/:objectName/requestGaussianSplatting/', async function (req, res) {
     if (!utilities.isValidId(req.params.objectName)) {
         res.status(400).send('Invalid object name. Must be alphanumeric.');

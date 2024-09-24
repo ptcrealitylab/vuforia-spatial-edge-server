@@ -2,7 +2,7 @@ const fsProm = require('../persistence/fsProm.js');
 const path = require('path');
 const formidable = require('formidable');
 const utilities = require('../libraries/utilities');
-const {fileExists, unlinkIfExists, mkdirIfNotExists} = utilities;
+const {fileExists, listSplatFiles, splatFileExists, unlinkIfExists, mkdirIfNotExists} = utilities;
 const {startSplatTask, splatTasks} = require('./object/SplatTask.js');
 const { beatPort } = require('../config.js');
 
@@ -447,6 +447,28 @@ const checkFileExists = async (objectId, filePath) => {
     return await fileExists(absoluteFilePath);
 };
 
+const checkSplatFileExists = async (objectId, filePath) => {
+    let object = utilities.getObject(objects, objectId);
+    if (!object) {
+        return false;
+    }
+
+    let objectIdentityDir = path.join(objectsPath, object.name, identityFolderName);
+    let absoluteFilePath = path.join(objectIdentityDir, filePath);
+    return await splatFileExists(absoluteFilePath);
+}
+
+const callListSplatFiles = async (objectId, filePath) => {
+    let object = utilities.getObject(objects, objectId);
+    if (!object) {
+        return [];
+    }
+
+    let objectIdentityDir = path.join(objectsPath, object.name, identityFolderName);
+    let absoluteFilePath = path.join(objectIdentityDir, filePath);
+    return await listSplatFiles(absoluteFilePath);
+}
+
 /**
  * Check the status of all the possible target files that an object might have
  * @param {string} objectId
@@ -462,7 +484,7 @@ const checkTargetFiles = async (objectId) => {
         checkFileExists(objectId, '/target/target.dat'),
         checkFileExists(objectId, '/target/target.jpg'),
         checkFileExists(objectId, '/target/target.3dt'),
-        checkFileExists(objectId, '/target/target.splat'),
+        checkSplatFileExists(objectId, '/target/target_splats'),
     ]);
     return {
         glbExists,
@@ -592,7 +614,7 @@ const uploadTarget = async (objectName, req, res) => {
         let xmlPath = path.join(targetDir, 'target.xml');
         let glbPath = path.join(targetDir, 'target.glb');
         let tdtPath = path.join(targetDir, 'target.3dt');
-        let splatPath = path.join(targetDir, 'target.splat');
+        let splatPath = path.join(targetDir, 'target/target_splats');
         let fileList = [jpgPath, xmlPath, datPath, glbPath, tdtPath, splatPath];
 
         let sendObject = {
@@ -604,7 +626,7 @@ const uploadTarget = async (objectName, req, res) => {
             datExists: await fileExists(datPath),
             glbExists: await fileExists(glbPath),
             tdtExists: await fileExists(tdtPath),
-            splatExists: await fileExists(splatPath)
+            splatExists: await splatFileExists(splatPath)
         };
 
         object.tcs = utilities.generateChecksums(objects, fileList);
@@ -678,6 +700,7 @@ module.exports = {
     setFrameSharingEnabled: setFrameSharingEnabled,
     checkFileExists: checkFileExists,
     checkTargetFiles: checkTargetFiles,
+    callListSplatFiles: callListSplatFiles,
     uploadTarget: uploadTarget,
     getObject: getObject,
     setup: setup,

@@ -1167,6 +1167,36 @@ function fileExists(filePath) {
 }
 exports.fileExists = fileExists;
 
+function listSplatFiles(splatFolderPath) {
+    let splatFiles = [];
+    return fsProm.access(splatFolderPath)
+        .then(() => {
+            return fsProm.readdir(splatFolderPath);
+        })
+        .then((files) => {
+            let regex = /^target.*\.splat$/;
+            files.forEach((splatName) => {
+                if (regex.test(splatName)) splatFiles.push(path.join('target', 'target_splats', splatName));
+            });
+            return splatFiles;
+        })
+        .catch((err) => {
+            console.error('Error accessing or reading the folder:', err);
+            return [];
+        });
+}
+
+exports.listSplatFiles = listSplatFiles;
+
+function splatFileExists(folderPath) {
+    return listSplatFiles(folderPath).then((splatFiles) => {
+        return splatFiles.length > 0;
+    }).catch(() => {
+        return false;
+    })
+}
+exports.splatFileExists = splatFileExists;
+
 /**
  * All-in-one mkdir solution. Wraps error because TOCTOU
  * @param {string} dirPath - path to folder
