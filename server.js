@@ -4173,14 +4173,6 @@ function forEachObject(callback) {
     }
 }
 
-function _forEachHumanPoseObject(callback) {
-    for (var objectID in objects) {
-        if (objects[objectID].isHumanPose) {
-            callback(objectID, objects[objectID]);
-        }
-    }
-}
-
 function doesFrameExist(objectKey, frameKey) {
     if (doesObjectExist(objectKey)) {
         var foundObject = getObject(objectKey);
@@ -4261,7 +4253,7 @@ hardwareAPI.screenObjectServerCallBack(function (object, frame, node, touchOffse
  * All links that use the id will fire up the engine to process the link.
  **/
 
-var engine = {
+const engine = {
     link: undefined,
     internalObjectDestination: undefined,
     blockKey: undefined,
