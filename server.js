@@ -466,7 +466,6 @@ var hardwareInterfaceLoader = null;
 // If a new link is linking to another objects, this knownObjects list is used to establish the connection.
 // This list is also used to keep track of the actual IP of an object. If the IP of an object in a network changes,
 // It has no influance on the connectivity, as it is referenced by the object UUID through the entire time.
-var protocols = new Protocols(objects, engine, doesObjectExist, getNode);
 var knownObjects = {};
 exports.knownObjects = knownObjects;
 // A lookup table used to process faster through the objects.
@@ -4469,6 +4468,7 @@ var engine = {
         this.trigger(thisLink.objectB, thisLink.frameB, thisLink.nodeB, internalObjectDestination);
     }
 };
+const protocols = new Protocols(objects, engine, doesObjectExist, getNode);
 
 /**
  * @desc Sends processedValue to the responding Object using the data saved in the LinkArray located by IDinLinkArray
