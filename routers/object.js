@@ -426,13 +426,13 @@ router.post('/:objectName/frame/:frameName/pinned/', function (req, res) {
 });
 
 // Check the existence of a file at a filepath within the .identity directory of the specified object
-router.get('/:objectName/checkFileExists/*', async (req, res) => {
+router.get('/:objectName/checkFileExists/*filePath', async (req, res) => {
     if (!utilities.isValidId(req.params.objectName)) {
         res.status(400).send('Invalid object name. Must be alphanumeric.');
         return;
     }
     // Extract the file path from the URL
-    const filePath = req.params[0];
+    const filePath = req.params.filePath.join('/');
     objectController.checkFileExists(req.params.objectName, filePath).then(exists => {
         res.json({ exists: exists });
     }).catch(e => {
