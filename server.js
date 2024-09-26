@@ -1289,7 +1289,7 @@ async function getKnownSceneGraph(ip, port) {
     // 3. parse the results and add it as a known scene graph
     let thatSceneGraph = JSON.parse(response);
     console.log('Discovered scene graph from server ' + ip + ' with keys:');
-    console.log(Object.keys(thatSceneGraph));
+    // console.log(Object.keys(thatSceneGraph));
 
     // 4. create a method to compile all known scene graphs with this server's graph to be visualized
     worldGraph.addKnownGraph(ip, thatSceneGraph);

@@ -39,7 +39,7 @@ class WorldGraph {
             this.compiledGraph.addDataFromSerializableGraph(knownGraphCopy);
         }
 
-        console.log(this.compiledGraph);
+        // console.log(this.compiledGraph);
         console.log('finished compiling graphs');
 
         return this.compiledGraph;
