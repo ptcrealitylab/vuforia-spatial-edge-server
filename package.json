@@ -10,7 +10,7 @@
     "cors": "^2.8.5",
     "decompress-zip": "github:hobinjk-ptc/decompress-zip",
     "directory-tree": "^3.5.2",
-    "express": "^4.20.0",
+    "express": "^5.0.0",
     "express-handlebars": "^5.3.5",
     "formidable": "^3",
     "ip": "^2.0.1",
