@@ -41,6 +41,18 @@ jobs:
         name: test-screenshots
         path: screenshots/
 
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage
+        path: coverage/
+
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-ui
+        path: coverage-ui/
+
   build-insecure:
 
     runs-on: ubuntu-latest
