@@ -43,25 +43,35 @@ class LocalUIApp {
         this.app.use('/addons/resources', (req, res) => {
             res.send(this.resourcesSources);
         });
-        this.app.use('/addons/:addonName/:file', (req, res) => {
+
+        this.app.use('/addons/:addonName/*', (req, res) => {
             const addonName = req.params.addonName;
-            const file = req.params.file;
+            let filePath = req.params[0]; // Capture the remaining path after addonName
+
+            // Security check to prevent directory traversal
+            if (filePath.includes('..')) {
+                return res.status(403).send('Access prohibited');
+            }
+
+            // Normalize filePath and join with addon directory
+            filePath = path.normalize(filePath);
             const scriptsInfo = this.scripts[addonName];
-            if (scriptsInfo && scriptsInfo.files.includes(file)) {
-                res.sendFile(path.join(scriptsInfo.folder, file));
-                return;
+
+            if (scriptsInfo && scriptsInfo.files.includes(filePath)) {
+                return res.sendFile(path.join(scriptsInfo.folder, filePath));
             }
+
             const stylesInfo = this.styles[addonName];
-            if (stylesInfo && stylesInfo.files.includes(file)) {
-                res.sendFile(path.join(stylesInfo.folder, file));
-                return;
+            if (stylesInfo && stylesInfo.files.includes(filePath)) {
+                return res.sendFile(path.join(stylesInfo.folder, filePath));
             }
+
             const resourcesInfo = this.resources[addonName];
-            if (resourcesInfo && resourcesInfo.files.includes(file)) {
-                res.sendFile(path.join(resourcesInfo.folder, file));
-                return;
+            if (resourcesInfo && resourcesInfo.files.includes(filePath)) {
+                return res.sendFile(path.join(resourcesInfo.folder, filePath));
             }
-            res.status(403).send('access prohibited to non-script non-style file');
+
+            res.status(403).send('Access prohibited to non-script non-style file');
         });
         this.app.get('/proxy/*', proxyRequestHandler);
         if (this.userinterfacePath && fs.existsSync(this.userinterfacePath)) {
@@ -137,7 +147,7 @@ class LocalUIApp {
                 // this list can be extended in future to support more resource types
                 return filename.endsWith('.svg') || filename.endsWith('.png') ||
                     filename.endsWith('.fbx') || filename.endsWith('.gltf') ||
-                    filename.endsWith('.glb') || filename.endsWith('.3dt');
+                    filename.endsWith('.glb') || filename.endsWith('.3dt') || filename.endsWith('.html');
             });
             if (fileList.length === 0) {
                 continue;
