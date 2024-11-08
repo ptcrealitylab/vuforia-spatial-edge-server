@@ -815,6 +815,7 @@
                 this.measureAppToggleMapUI = makeSendStub('measureAppToggleMapUI'); // measure app toggle on / off the map settings UI
                 this.measureAppSetPathPoint = makeSendStub('measureAppSetPathPoint'); // in line measure mode, set a path start / end point, send the info to user interface
                 this.measureAppSetClothPos = makeSendStub('measureAppSetClothPos'); // in area measure mode, set a cloth bounding box, send the info to user interface
+                this.thingviewSendCanvasCapture = makeSendStub('thingviewSendCanvasCapture');
 
                 this.profilerStartTimeProcess = makeSendStub('profilerStartTimeProcess');
                 this.profilerStopTimeProcess = makeSendStub('profilerStopTimeProcess');
@@ -861,6 +862,7 @@
                 this.addMeasureAppHeightMapChangeListener = makeSendStub('addMeasureAppHeightMapChangeListener'); // triggered when user interface change to height map
                 this.addMeasureAppFindPathListener = makeSendStub('addMeasureAppFindPathListener'); // triggered when user interface pathfinding.js finds a path
                 this.addMeasureAppClothInfoListener = makeSendStub('addMeasureAppClothInfoListener'); // triggered when user interface clothSimulation.js finishes computing the cloth volume
+                this.addThingViewAppGetCanvasCaptureListener = makeSendStub('addThingViewAppGetCanvasCaptureListener');
                 // deprecated or unimplemented methods
                 this.addAccelerationListener = makeSendStub('addAccelerationListener');
             }
@@ -2477,6 +2479,15 @@
                 }
             });
         };
+        
+        this.thingviewSendCanvasCapture = function(thingviewResponseId, thingviewCanvasData) {
+            postDataToParent({
+                thingviewSendCanvasCapture: {
+                    thingviewResponseId: thingviewResponseId,
+                    thingviewCanvasData: thingviewCanvasData
+                }
+            });
+        }
 
         /**
          * Stubbed here for backwards compatibility of API. In previous versions:
@@ -2679,6 +2690,14 @@
                 }
             };
         };
+        
+        this.addThingViewAppGetCanvasCaptureListener = function(callback) {
+            spatialObject.messageCallBacks.getThingViewCanvasCall = function (msgContent) {
+                if (typeof msgContent.requestCanvas !== 'undefined') {
+                    callback(msgContent.thingviewRequestId);
+                }
+            };
+        }
     };
 
     SpatialInterface.prototype.injectSetterGetterAPI = function() {
